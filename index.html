@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fabulor — Simulateur de Capital</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#D4AF37;--gold-light:#F0D060;--gold-dim:rgba(212,175,55,0.15);
+  --dark:#080A0D;--surface:#0E1117;--surface2:#141820;
+  --border:rgba(212,175,55,0.2);--text:#F0EEE8;--muted:rgba(240,238,232,0.6);
+}
+html,body{min-height:100vh;background:var(--dark);color:var(--text);font-family:'DM Mono',monospace;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 20% 10%,rgba(212,175,55,.06) 0%,transparent 60%),radial-gradient(ellipse 60% 80% at 85% 80%,rgba(212,175,55,.04) 0%,transparent 55%);pointer-events:none;z-index:0}
+.wrapper{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:60px 24px 80px}
+
+header{text-align:center;margin-bottom:64px;animation:fadeDown .8s ease both}
+.brand{font-family:'Cormorant Garamond',serif;font-size:clamp(11px,1.5vw,13px);font-weight:300;letter-spacing:.35em;color:var(--gold);text-transform:uppercase;margin-bottom:16px}
+header h1{font-family:'Cormorant Garamond',serif;font-size:clamp(38px,6vw,68px);font-weight:300;line-height:1.05;margin-bottom:6px}
+header p{font-size:11px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase}
+.divider{display:flex;align-items:center;gap:16px;margin:24px auto 0;max-width:260px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.divider-diamond{width:6px;height:6px;background:var(--gold);transform:rotate(45deg);flex-shrink:0}
+
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;animation:fadeUp .8s .2s ease both}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;animation:fadeUp .8s .25s ease both}
+.grid-1{display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:32px;animation:fadeUp .8s .28s ease both}
+@media(max-width:680px){.grid,.grid-2{grid-template-columns:1fr}}
+
+.input-card{background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:28px 24px;position:relative;overflow:hidden;transition:border-color .3s}
+.input-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:0;transition:opacity .3s}
+.input-card:focus-within{border-color:rgba(212,175,55,.5)}
+.input-card:focus-within::before{opacity:1}
+.input-num{font-size:10px;letter-spacing:.3em;color:var(--gold);margin-bottom:12px;display:block}
+.input-label{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:300;color:var(--muted);margin-bottom:20px;line-height:1.3;display:block}
+.input-row{display:flex;align-items:baseline;gap:8px}
+.input-field{flex:1;background:transparent;border:none;border-bottom:1px solid rgba(212,175,55,.3);color:var(--text);font-family:'DM Mono',monospace;font-size:22px;font-weight:300;padding:4px 0 8px;outline:none;width:100%;transition:border-color .3s}
+.input-field:focus{border-color:var(--gold)}
+.input-field::placeholder{color:rgba(240,238,232,.2)}
+.input-field::-webkit-outer-spin-button,.input-field::-webkit-inner-spin-button{-webkit-appearance:none}
+.input-field[type=number]{-moz-appearance:textfield}
+.input-unit{font-size:13px;color:var(--gold);font-weight:300;letter-spacing:.1em;white-space:nowrap;padding-bottom:8px}
+.slider-wrapper{margin-top:14px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:2px;background:rgba(212,175,55,.2);border-radius:0;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--gold);border-radius:0;transform:rotate(45deg);cursor:pointer;transition:background .2s}
+input[type=range]::-webkit-slider-thumb:hover{background:var(--gold-light)}
+.withdrawal-badge{margin-top:14px;display:flex;align-items:center;gap:10px}
+.badge-pct{font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--gold-light);min-width:52px}
+.badge-label{font-size:10px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;line-height:1.5}
+.scenario-card{display:flex;flex-direction:column;justify-content:center;gap:14px}
+.radio-label{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:11px;letter-spacing:.15em;color:var(--muted)}
+.radio-label input{accent-color:var(--gold)}
+
+/* MFX PANEL */
+.mfx-panel{background:var(--surface);border:1px solid rgba(212,175,55,0.35);border-radius:2px;padding:28px 24px;position:relative;overflow:hidden;margin-bottom:16px;animation:fadeUp .8s .15s ease both}
+.mfx-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.mfx-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.mfx-body{margin-top:24px;display:none}
+.mfx-body.visible{display:block}
+.mfx-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:500px){.mfx-grid{grid-template-columns:1fr}}
+.mfx-field-label{font-size:9px;letter-spacing:.28em;color:var(--gold);text-transform:uppercase}
+.mfx-btn{background:var(--gold);color:#080A0D;border:none;padding:10px 22px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;border-radius:1px;transition:background .2s;white-space:nowrap}
+.mfx-btn:hover{background:var(--gold-light)}
+.mfx-btn:disabled{opacity:.5;cursor:not-allowed}
+.mfx-btn-out{background:transparent;border:1px solid rgba(212,175,55,.4);color:var(--muted)}
+.mfx-btn-out:hover{border-color:var(--gold);color:var(--gold);background:transparent}
+.mfx-status{font-size:10px;letter-spacing:.15em;color:var(--muted)}
+.mfx-status.ok{color:#6FCF97}
+.mfx-status.err{color:#EB5757}
+.mfx-data-card{margin-top:20px;background:var(--surface2);border:1px solid var(--border);border-radius:2px;overflow:hidden}
+.mfx-data-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border)}
+@media(max-width:500px){.mfx-data-grid{grid-template-columns:1fr 1fr}}
+.mfx-data-item{background:var(--surface);padding:14px 18px}
+.mfx-data-label{font-size:8px;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;display:block;margin-bottom:5px}
+.mfx-data-val{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:300;color:var(--text);display:block}
+.mfx-data-val.accent{color:var(--gold-light)}
+.mfx-data-val.red{color:#EB5757}
+.mfx-import-bar{padding:10px 18px;background:rgba(212,175,55,.06);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.mfx-import-note{font-size:9px;color:#6FCF97;letter-spacing:.1em}
+.mfx-update-time{font-size:9px;color:var(--muted);letter-spacing:.1em}
+.apport-card{background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:28px 24px;position:relative;overflow:hidden;transition:border-color .3s;animation:fadeUp .8s .28s ease both}
+.apport-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:0;transition:opacity .3s}
+.apport-card:focus-within{border-color:rgba(212,175,55,.5)}
+.apport-card:focus-within::before{opacity:1}
+.apport-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.apport-toggle{display:flex;align-items:center;gap:10px;cursor:pointer}
+.toggle-track{width:36px;height:20px;background:rgba(212,175,55,.2);border-radius:10px;position:relative;transition:background .3s;flex-shrink:0;border:1px solid var(--border)}
+.toggle-track.on{background:rgba(212,175,55,.4)}
+.toggle-thumb{width:14px;height:14px;background:var(--muted);border-radius:50%;position:absolute;top:2px;left:2px;transition:left .3s,background .3s}
+.toggle-track.on .toggle-thumb{left:18px;background:var(--gold)}
+.toggle-label{font-size:11px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase}
+.apport-body{margin-top:24px;display:none}
+.apport-body.visible{display:block}
+.apport-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:500px){.apport-grid{grid-template-columns:1fr}}
+
+/* Frequency tabs */
+.freq-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.freq-tab{padding:6px 14px;font-size:10px;letter-spacing:.2em;text-transform:uppercase;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;font-family:'DM Mono',monospace;border-radius:1px}
+.freq-tab:hover{border-color:rgba(212,175,55,.5);color:var(--text)}
+.freq-tab.active{border-color:var(--gold);background:var(--gold-dim);color:var(--gold)}
+
+/* Custom schedule */
+.custom-schedule{margin-top:20px}
+.custom-title{font-size:10px;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
+.custom-list{display:flex;flex-direction:column;gap:8px;max-height:180px;overflow-y:auto}
+.custom-list::-webkit-scrollbar{width:4px}
+.custom-list::-webkit-scrollbar-track{background:transparent}
+.custom-list::-webkit-scrollbar-thumb{background:rgba(212,175,55,.3);border-radius:2px}
+.custom-row{display:flex;align-items:center;gap:10px}
+.custom-row input[type=number]{background:transparent;border:none;border-bottom:1px solid rgba(212,175,55,.25);color:var(--text);font-family:'DM Mono',monospace;font-size:14px;padding:3px 0 5px;outline:none;width:70px;-moz-appearance:textfield}
+.custom-row input[type=number]::-webkit-outer-spin-button,.custom-row input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+.custom-row input[type=number]:focus{border-color:var(--gold)}
+.custom-row-label{font-size:10px;color:var(--muted);letter-spacing:.1em;flex:1}
+.custom-row-del{background:none;border:none;color:rgba(212,175,55,.4);cursor:pointer;font-size:16px;line-height:1;padding:0 4px;transition:color .2s}
+.custom-row-del:hover{color:var(--gold)}
+.add-custom-btn{margin-top:10px;display:flex;align-items:center;gap:8px;background:none;border:1px dashed rgba(212,175,55,.3);color:var(--muted);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;padding:8px 16px;cursor:pointer;transition:all .2s;width:100%}
+.add-custom-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+/* Apport summary */
+.apport-summary{margin-top:16px;padding:12px 16px;background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.15);border-radius:2px;font-size:11px;color:var(--muted);letter-spacing:.1em;display:none}
+.apport-summary.visible{display:block}
+.apport-summary span{color:var(--gold-light)}
+
+/* RESULT */
+.result-panel{background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:40px 40px 0;position:relative;overflow:hidden;animation:fadeUp .8s .35s ease both}
+.result-panel::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 50% 0%,rgba(212,175,55,.05),transparent 70%);pointer-events:none}
+.result-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:36px;flex-wrap:wrap;gap:20px}
+.result-label{font-size:10px;letter-spacing:.35em;color:var(--gold);text-transform:uppercase;margin-bottom:10px;display:block}
+.result-capital{font-family:'Cormorant Garamond',serif;font-size:clamp(36px,6vw,60px);font-weight:300;line-height:1;letter-spacing:-.02em;transition:all .4s ease}
+.result-capital .currency{font-size:.45em;color:var(--gold);vertical-align:super;font-weight:400;margin-right:4px}
+.result-gains{text-align:right}
+.gain-value{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:300;color:var(--gold-light)}
+.gain-label{font-size:10px;color:var(--muted);letter-spacing:.2em;text-transform:uppercase;margin-top:4px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-top:1px solid var(--border)}
+@media(max-width:600px){.stats-row{grid-template-columns:1fr 1fr}}
+.stat-box{background:var(--surface);padding:20px 16px;text-align:center}
+.stat-val{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;color:var(--text);display:block;margin-bottom:4px;transition:all .4s ease}
+.stat-lbl{font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase}
+
+/* ROI */
+.roi-panel{background:var(--surface2);border:1px solid var(--border);border-radius:2px;padding:32px 40px;margin-top:16px;animation:fadeUp .8s .42s ease both;position:relative;overflow:hidden}
+.roi-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.roi-title{font-size:10px;letter-spacing:.35em;color:var(--gold);text-transform:uppercase;margin-bottom:24px}
+.roi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border)}
+@media(max-width:500px){.roi-grid{grid-template-columns:1fr}}
+.roi-box{background:var(--surface);padding:20px 24px}
+.roi-box-label{font-size:9px;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:8px}
+.roi-box-val{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:var(--text);transition:all .4s}
+.roi-box-val.accent{color:var(--gold-light)}
+.roi-box-sub{font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:.1em}
+.withdrawal-bar{margin-top:20px;padding:16px 24px;background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.15);border-radius:2px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.wb-label{font-size:10px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase}
+.wb-val{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--gold-light)}
+.wb-note{font-size:10px;color:var(--muted);letter-spacing:.1em}
+
+/* CHART */
+.chart-section{margin-top:32px;animation:fadeUp .8s .5s ease both}
+.chart-title{font-size:10px;letter-spacing:.35em;color:var(--gold);text-transform:uppercase;margin-bottom:20px}
+.chart-wrap{position:relative;height:200px;background:var(--surface2);border:1px solid var(--border);border-radius:2px;overflow:hidden}
+canvas{width:100%!important;height:100%!important}
+
+/* TABLE */
+.table-section{margin-top:32px;animation:fadeUp .8s .6s ease both}
+.table-title{font-size:10px;letter-spacing:.35em;color:var(--gold);text-transform:uppercase;margin-bottom:16px}
+.data-table{width:100%;border-collapse:collapse;font-size:12px}
+.data-table thead tr{border-bottom:1px solid var(--border)}
+.data-table th{padding:8px 10px;text-align:left;font-size:9px;letter-spacing:.2em;color:var(--gold);font-weight:400;text-transform:uppercase}
+.data-table td{padding:10px 10px;border-bottom:1px solid rgba(212,175,55,.07);color:var(--muted);font-size:12px;transition:color .2s}
+.data-table tr:hover td{color:var(--text);background:var(--gold-dim)}
+.data-table td.hl{color:var(--gold-light);font-family:'Cormorant Garamond',serif;font-size:15px}
+.data-table td.gn{color:#6FCF97}
+.data-table td.bl{color:#7EC8E3}
+.data-table td.yw{color:var(--gold-light)}
+
+footer{margin-top:56px;text-align:center;animation:fadeUp .8s .7s ease both}
+footer p{font-size:10px;color:rgba(240,238,232,.2);letter-spacing:.2em;text-transform:uppercase}
+
+@keyframes fadeDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.pulse{animation:pulse .3s ease}
+@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<header>
+  <div class="brand">Fabulor · Simulateur</div>
+  <h1>Projection <span style="color:var(--gold)">Simulée</span></h1>
+  <p>Maîtriser son capital sur la durée</p>
+  <div class="divider"><div class="divider-diamond"></div></div>
+</header>
+
+<!-- Fabulor v2 -->
+<div class="mfx-panel" id="mfxPanel">
+  <div class="mfx-header" id="mfxHeaderClick" style="cursor:pointer">
+    <div>
+      <span class="input-num">00</span>
+      <span class="input-label" style="margin-bottom:0">Connecter MyFXBook</span>
+    </div>
+    <button class="mfx-btn" id="mfxToggleBtn" style="font-size:9px;padding:8px 18px">▼ Ouvrir</button>
+  </div>
+
+  <div class="mfx-body" id="mfxBody">
+    <div class="mfx-grid">
+      <div>
+        <span class="mfx-field-label">Email MyFXBook</span>
+        <input type="email" class="input-field" id="mfxEmail" placeholder="votre@email.com" style="font-size:15px;margin-top:8px">
+      </div>
+      <div>
+        <span class="mfx-field-label">Mot de passe</span>
+        <input type="password" class="input-field" id="mfxPassword" placeholder="••••••••" style="font-size:15px;margin-top:8px">
+      </div>
+    </div>
+    <div style="margin-top:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <button class="mfx-btn" id="mfxLoginBtn">⟳ Se connecter & importer</button>
+      <button class="mfx-btn mfx-btn-out" id="mfxLogoutBtn" style="display:none">✕ Déconnecter</button>
+      <button class="mfx-btn" id="mfxExportBtn" style="display:none;background:#1a2a1a;color:#6FCF97;border:1px solid #6FCF97">⬇ Générer version publique</button>
+      <span class="mfx-status" id="mfxStatus"></span>
+    </div>
+
+    <!-- Account selector (shown after login if multiple accounts) -->
+    <div id="mfxAccountSelector" style="display:none;margin-top:18px">
+      <span class="mfx-field-label">Compte à importer</span>
+      <div class="freq-tabs" id="mfxAccountTabs" style="margin-top:10px"></div>
+    </div>
+
+    <!-- Live data card -->
+    <div class="mfx-data-card" id="mfxDataCard" style="display:none">
+      <div class="mfx-data-grid">
+        <div class="mfx-data-item">
+          <span class="mfx-data-label">Compte</span>
+          <span class="mfx-data-val" id="mfxName">—</span>
+        </div>
+        <div class="mfx-data-item">
+          <span class="mfx-data-label">Balance</span>
+          <span class="mfx-data-val" id="mfxBalance">—</span>
+        </div>
+        <div class="mfx-data-item">
+          <span class="mfx-data-label">Gain journalier</span>
+          <span class="mfx-data-val accent" id="mfxDaily">—</span>
+        </div>
+        <div class="mfx-data-item">
+          <span class="mfx-data-label">Gain mensuel</span>
+          <span class="mfx-data-val" id="mfxMonthly">—</span>
+        </div>
+        <div class="mfx-data-item">
+          <span class="mfx-data-label">Gain total</span>
+          <span class="mfx-data-val" id="mfxGain">—</span>
+        </div>
+        <div class="mfx-data-item">
+          <span class="mfx-data-label">Drawdown</span>
+          <span class="mfx-data-val red" id="mfxDrawdown">—</span>
+        </div>
+      </div>
+      <div class="mfx-import-bar">
+        <span class="mfx-import-note">✔ Données importées dans le simulateur — vous pouvez ajuster manuellement</span>
+        <span class="mfx-update-time" id="mfxUpdateTime"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Row 1 : 3 inputs -->
+<div class="grid">
+  <div class="input-card">
+    <span class="input-num">01</span>
+    <span class="input-label">Capital de départ</span>
+    <div class="input-row">
+      <input type="number" class="input-field" id="capital" value="10000" min="0">
+      <span class="input-unit">€</span>
+    </div>
+    <div class="slider-wrapper"><input type="range" id="capitalRange" min="1000" max="500000" step="1000" value="10000"></div>
+  </div>
+  <div class="input-card">
+    <span class="input-num">02</span>
+    <span class="input-label">Gain journalier</span>
+    <div class="input-row">
+      <input type="number" class="input-field" id="pct" value="0.5" min="0.01" max="10" step="0.01">
+      <span class="input-unit">% / j</span>
+    </div>
+    <div class="slider-wrapper"><input type="range" id="pctRange" min="0.01" max="5" step="0.01" value="0.5"></div>
+  </div>
+  <div class="input-card">
+    <span class="input-num">03</span>
+    <span class="input-label">Durée de projection</span>
+    <div class="input-row">
+      <input type="number" class="input-field" id="months" value="60" min="1" max="360">
+      <span class="input-unit">mois</span>
+    </div>
+    <div class="slider-wrapper"><input type="range" id="monthsRange" min="1" max="360" step="1" value="60"></div>
+  </div>
+</div>
+
+<!-- Row 2 : retrait + scénario -->
+<div class="grid-2">
+  <div class="input-card">
+    <span class="input-num">04</span>
+    <span class="input-label">Retrait mensuel des intérêts</span>
+    <div class="input-row">
+      <input type="number" class="input-field" id="withdrawal" value="0" min="0" max="100" step="1">
+      <span class="input-unit">%</span>
+    </div>
+    <div class="slider-wrapper"><input type="range" id="withdrawalRange" min="0" max="100" step="1" value="0"></div>
+    <div class="withdrawal-badge">
+      <span class="badge-pct" id="withdrawalBadge">0%</span>
+      <span class="badge-label">des intérêts du mois<br>retirés chaque mois</span>
+    </div>
+  </div>
+  <div class="input-card scenario-card">
+    <span class="input-num">05</span>
+    <span class="input-label" style="margin-bottom:0">Scénario actif</span>
+    <label class="radio-label"><input type="radio" name="scenario" value="compound" checked> Intérêts composés (réinvestis)</label>
+    <label class="radio-label"><input type="radio" name="scenario" value="simple"> Intérêts simples (capital fixe)</label>
+  </div>
+</div>
+
+<!-- Row 3 : Apports périodiques -->
+<div class="apport-card">
+  <div class="apport-header">
+    <div>
+      <span class="input-num">06</span>
+      <span class="input-label" style="margin-bottom:0">Apports périodiques de capital</span>
+    </div>
+    <div class="apport-toggle" id="apportToggle">
+      <div class="toggle-track" id="toggleTrack"><div class="toggle-thumb"></div></div>
+      <span class="toggle-label">Activer</span>
+    </div>
+  </div>
+
+  <div class="apport-body" id="apportBody">
+    <div class="apport-grid">
+      <div>
+        <span style="font-size:10px;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;display:block;margin-bottom:12px">Montant par apport</span>
+        <div class="input-row">
+          <input type="number" class="input-field" id="apportAmt" value="500" min="0" style="font-size:20px">
+          <span class="input-unit">€</span>
+        </div>
+        <div class="slider-wrapper"><input type="range" id="apportAmtRange" min="100" max="50000" step="100" value="500"></div>
+      </div>
+      <div>
+        <span style="font-size:10px;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;display:block;margin-bottom:12px">Fréquence</span>
+        <div class="freq-tabs">
+          <button class="freq-tab active" data-freq="1">Mensuel</button>
+          <button class="freq-tab" data-freq="3">Trimestriel</button>
+          <button class="freq-tab" data-freq="6">Semestriel</button>
+          <button class="freq-tab" data-freq="12">Annuel</button>
+          <button class="freq-tab" data-freq="custom">Personnalisé</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom schedule -->
+    <div class="custom-schedule" id="customSchedule" style="display:none">
+      <div class="custom-title">Apports personnalisés — définissez le mois et le montant</div>
+      <div class="custom-list" id="customList"></div>
+      <button class="add-custom-btn" id="addCustomBtn">+ Ajouter un apport</button>
+    </div>
+
+    <div class="apport-summary" id="apportSummary"></div>
+  </div>
+</div>
+
+<!-- Result -->
+<div class="result-panel" style="margin-top:32px">
+  <div class="result-header">
+    <div>
+      <span class="result-label">Capital final projeté</span>
+      <div class="result-capital" id="finalCapital">
+        <span class="currency">€</span><span id="capitalVal">—</span>
+      </div>
+    </div>
+    <div class="result-gains">
+      <span class="result-label">Gain net total</span>
+      <div class="gain-value" id="gainVal">—</div>
+      <div class="gain-label" id="gainPct">—</div>
+    </div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-box"><span class="stat-val" id="statDays">—</span><span class="stat-lbl">Jours trading</span></div>
+    <div class="stat-box"><span class="stat-val" id="statAnnual">—</span><span class="stat-lbl">ROI annuel moy.</span></div>
+    <div class="stat-box"><span class="stat-val" id="statX">—</span><span class="stat-lbl">Multiplicateur</span></div>
+    <div class="stat-box"><span class="stat-val" id="statROI">—</span><span class="stat-lbl">ROI Global</span></div>
+  </div>
+</div>
+
+<!-- ROI -->
+<div class="roi-panel">
+  <div class="roi-title">Analyse ROI — Retour sur Investissement</div>
+  <div class="roi-grid">
+    <div class="roi-box">
+      <div class="roi-box-label">ROI Total</div>
+      <div class="roi-box-val accent" id="roiTotal">—</div>
+      <div class="roi-box-sub">sur <span id="roiDuration">—</span></div>
+    </div>
+    <div class="roi-box">
+      <div class="roi-box-label">ROI Annuel Moyen</div>
+      <div class="roi-box-val" id="roiAnnual">—</div>
+      <div class="roi-box-sub">par année complète</div>
+    </div>
+    <div class="roi-box">
+      <div class="roi-box-label">ROI Mensuel Moyen</div>
+      <div class="roi-box-val" id="roiMonthly">—</div>
+      <div class="roi-box-sub">21 jours / mois</div>
+    </div>
+  </div>
+  <div class="withdrawal-bar" id="withdrawalBar" style="display:none">
+    <div><div class="wb-label">Retraits cumulés</div><div class="wb-val" id="wbTotal">—</div></div>
+    <div><div class="wb-label">Retrait mensuel estimé</div><div class="wb-val" id="wbMonthly">—</div></div>
+    <div><div class="wb-note" id="wbNote">—</div></div>
+  </div>
+</div>
+
+<!-- Chart -->
+<div class="chart-section">
+  <div class="chart-title">Évolution du Capital · Vue Annuelle</div>
+  <div class="chart-wrap"><canvas id="growthChart"></canvas></div>
+</div>
+
+<!-- Table -->
+<div class="table-section">
+  <div class="table-title">Détail Année par Année</div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Période</th><th>Capital</th><th>Apports</th><th>Gain / période</th>
+        <th>Retraits</th><th>Gain net total</th><th>ROI cumulé</th><th>×</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
+
+<footer>
+  <div class="divider" style="margin-bottom:20px"><div class="divider-diamond"></div></div>
+  <p>252 jours de trading / an · 21 jours / mois · Intérêts composés quotidiens</p>
+</footer>
+</div>
+
+<script>
+const DAYS_PER_MONTH = 21;
+const $ = id => document.getElementById(id);
+
+const fmt = n => {
+  if(n>=1e9) return (n/1e9).toLocaleString('fr-FR',{maximumFractionDigits:2})+' Md';
+  if(n>=1e6) return (n/1e6).toLocaleString('fr-FR',{maximumFractionDigits:2})+' M';
+  return n.toLocaleString('fr-FR',{maximumFractionDigits:0});
+};
+const fmtF = n => n.toLocaleString('fr-FR',{maximumFractionDigits:0});
+const fmtP = n => n.toLocaleString('fr-FR',{maximumFractionDigits:1})+'%';
+
+// ── MyFXBook Integration ───────────────────────────────────
+const API = '/.netlify/functions/myfxbook';
+let mfxSession = null;
+let mfxAccounts = [];
+let mfxActiveAccount = null;
+let mfxOn = false;
+
+// Toggle MyFXBook panel
+function toggleMfxPanel(){
+  mfxOn = !mfxOn;
+  const body = $('mfxBody');
+  body.classList.toggle('visible', mfxOn);
+  $('mfxToggleBtn').textContent = mfxOn ? '▲ Fermer' : '▼ Ouvrir';
+}
+document.addEventListener('DOMContentLoaded', function(){
+  document.getElementById('mfxToggleBtn').addEventListener('click', function(e){ e.stopPropagation(); toggleMfxPanel(); });
+  document.getElementById('mfxHeaderClick').addEventListener('click', toggleMfxPanel);
+  document.getElementById('mfxLoginBtn').addEventListener('click', mfxLogin);
+  document.getElementById('mfxLogoutBtn').addEventListener('click', mfxLogout);
+  document.getElementById('mfxExportBtn').addEventListener('click', generatePublicVersion);
+});
+
+async function mfxLogin(){
+  const email    = $('mfxEmail').value.trim();
+  const password = $('mfxPassword').value.trim();
+  if(!email || !password){ setStatus('Veuillez renseigner email et mot de passe.', 'err'); return; }
+
+  const btn = $('mfxLoginBtn');
+  btn.disabled = true;
+  setStatus('Connexion en cours…', '');
+
+  try {
+    const url = `${API}?action=login&email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
+    const res  = await fetch(url);
+    const data = await res.json();
+    if(data.error){ setStatus('Erreur : ' + data.message,'err'); btn.disabled=false; return; }
+    mfxSession = data.session;
+    setStatus('Connecté ✔ — Récupération des comptes…', 'ok');
+    await mfxFetchAccounts();
+
+  } catch(e){
+    setStatus('Erreur de connexion. Vérifiez vos identifiants.', 'err');
+  }
+  btn.disabled = false;
+}
+
+async function mfxFetchAccounts(){
+  try {
+    const url  = `${API}?action=accounts&session=${mfxSession}`;
+    const res  = await fetch(url);
+    const data = await res.json();
+    if(data.error){ setStatus('Erreur comptes : ' + data.message,'err'); return; }
+
+    mfxAccounts = data.accounts;
+    $('mfxLogoutBtn').style.display = 'inline-block';
+    $('mfxLoginBtn').style.display  = 'none';
+
+    if(mfxAccounts.length > 1){
+      // Show account selector
+      $('mfxAccountSelector').style.display = 'block';
+      const tabs = $('mfxAccountTabs');
+      tabs.innerHTML = '';
+      mfxAccounts.forEach((acc, i)=>{
+        const btn = document.createElement('button');
+        btn.className = 'freq-tab' + (i===0?' active':'');
+        btn.textContent = acc.name;
+        btn.addEventListener('click', ()=>{
+          document.querySelectorAll('#mfxAccountTabs .freq-tab').forEach(b=>b.classList.remove('active'));
+          btn.classList.add('active');
+          mfxApplyAccount(acc);
+        });
+        tabs.appendChild(btn);
+      });
+      mfxApplyAccount(mfxAccounts[0]);
+    } else if(mfxAccounts.length === 1){
+      mfxApplyAccount(mfxAccounts[0]);
+    } else {
+      setStatus('Aucun compte trouvé.', 'err');
+    }
+  } catch(e){
+    setStatus('Impossible de récupérer les comptes.', 'err');
+  }
+}
+
+function mfxApplyAccount(acc){
+  mfxActiveAccount = acc;
+
+  // Display live data
+  $('mfxName').textContent     = acc.name;
+  $('mfxBalance').textContent  = parseFloat(acc.balance).toLocaleString('fr-FR',{maximumFractionDigits:2}) + ' ' + (acc.currency||'€');
+  $('mfxDaily').textContent    = parseFloat(acc.daily).toLocaleString('fr-FR',{maximumFractionDigits:2}) + ' %';
+  $('mfxMonthly').textContent  = parseFloat(acc.monthly).toLocaleString('fr-FR',{maximumFractionDigits:2}) + ' %';
+  $('mfxGain').textContent     = parseFloat(acc.gain).toLocaleString('fr-FR',{maximumFractionDigits:2}) + ' %';
+  $('mfxDrawdown').textContent = parseFloat(acc.drawdown).toLocaleString('fr-FR',{maximumFractionDigits:2}) + ' %';
+  $('mfxUpdateTime').textContent = 'Mise à jour : ' + acc.lastUpdateDate;
+  $('mfxDataCard').style.display = 'block';
+
+  // Show export button
+  $('mfxExportBtn').style.display = 'inline-block';
+
+  // Inject into simulator
+  const daily   = parseFloat(acc.daily);
+  const balance = parseFloat(acc.balance);
+  if(daily > 0){ $('pct').value = daily.toFixed(2); $('pctRange').value = Math.min(daily,5); }
+  if(balance > 0){ $('capital').value = Math.round(balance); $('capitalRange').value = Math.min(Math.round(balance),500000); }
+
+  setStatus('✔ ' + acc.name + ' importé dans le simulateur', 'ok');
+  calculate();
+}
+
+// ── Generate public read-only version ─────────────────────
+
+function generatePublicVersion(){
+  if(!mfxActiveAccount){ return; }
+  const acc = mfxActiveAccount;
+  const daily   = parseFloat(acc.daily).toFixed(2);
+  const balance = Math.round(parseFloat(acc.balance));
+  const currency = acc.currency || '€';
+
+  const publicHTML = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fabulor — Simulateur de Capital</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+${document.querySelector('style').textContent}
+</style>
+</head>
+<body>
+<!-- STATS BANNER -->
+<div style="background:rgba(212,175,55,0.08);border-bottom:1px solid rgba(212,175,55,0.2);padding:10px 24px;display:flex;align-items:center;justify-content:center;gap:32px;flex-wrap:wrap;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.2em;color:rgba(240,238,232,0.7);text-transform:uppercase">
+  <span>📊 Stats réelles MyFXBook</span>
+  <span style="color:#D4AF37">Compte : <strong>${acc.name}</strong></span>
+  <span>Gain journalier : <strong style="color:#F0D060">${daily} %</strong></span>
+  <span>Gain mensuel : <strong style="color:#F0D060">${parseFloat(acc.monthly).toFixed(2)} %</strong></span>
+  <span>Gain total : <strong style="color:#F0D060">${parseFloat(acc.gain).toFixed(2)} %</strong></span>
+  <span>Drawdown : <strong style="color:#EB5757">${parseFloat(acc.drawdown).toFixed(2)} %</strong></span>
+  <span style="color:rgba(240,238,232,0.35)">Mis à jour : ${acc.lastUpdateDate}</span>
+</div>
+
+${document.querySelector('.wrapper').outerHTML
+  .replace(/<div class="mfx-panel"[\s\S]*?<\/div>\s*<!-- Row 1/,'<!-- Row 1')
+}
+
+<script>
+const DAYS_PER_MONTH = 21;
+const $ = id => document.getElementById(id);
+const fmt = n => {
+  if(n>=1e9) return (n/1e9).toLocaleString('fr-FR',{maximumFractionDigits:2})+' Md';
+  if(n>=1e6) return (n/1e6).toLocaleString('fr-FR',{maximumFractionDigits:2})+' M';
+  return n.toLocaleString('fr-FR',{maximumFractionDigits:0});
+};
+const fmtF = n => n.toLocaleString('fr-FR',{maximumFractionDigits:0});
+const fmtP = n => n.toLocaleString('fr-FR',{maximumFractionDigits:1})+'%';
+
+function sync(inpId,rngId,cb){
+  const inp=$(inpId),rng=$(rngId);
+  inp.addEventListener('input',()=>{rng.value=inp.value;cb();});
+  rng.addEventListener('input',()=>{inp.value=rng.value;cb();});
+}
+sync('capital','capitalRange',calculate);
+sync('pct','pctRange',calculate);
+sync('months','monthsRange',calculate);
+sync('withdrawal','withdrawalRange',calculate);
+sync('apportAmt','apportAmtRange',calculate);
+$('withdrawal').addEventListener('input',e=>$('withdrawalBadge').textContent=e.target.value+'%');
+$('withdrawalRange').addEventListener('input',e=>$('withdrawalBadge').textContent=e.target.value+'%');
+document.querySelectorAll('input[name=scenario]').forEach(r=>r.addEventListener('change',calculate));
+
+let apportOn=false;
+$('apportToggle').addEventListener('click',()=>{
+  apportOn=!apportOn;
+  $('toggleTrack').classList.toggle('on',apportOn);
+  $('apportBody').classList.toggle('visible',apportOn);
+  calculate();
+});
+
+let activeFreq=1;
+document.querySelectorAll('.freq-tab').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.freq-tab').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const f=btn.dataset.freq;
+    activeFreq=f==='custom'?'custom':parseInt(f);
+    $('customSchedule').style.display=f==='custom'?'block':'none';
+    calculate();
+  });
+});
+
+let customEntries=[{month:1,amount:500}];
+function renderCustomList(){
+  const list=$('customList'); list.innerHTML='';
+  customEntries.forEach((e,i)=>{
+    const row=document.createElement('div'); row.className='custom-row';
+    row.innerHTML=\`<span class="custom-row-label">Mois</span><input type="number" value="\${e.month}" min="1" max="360" data-i="\${i}" data-field="month"><span class="custom-row-label" style="margin-left:8px">Montant</span><input type="number" value="\${e.amount}" min="0" data-i="\${i}" data-field="amount"><span class="input-unit" style="font-size:11px">€</span><button class="custom-row-del" data-i="\${i}">×</button>\`;
+    list.appendChild(row);
+  });
+  list.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',()=>{customEntries[parseInt(inp.dataset.i)][inp.dataset.field]=parseFloat(inp.value)||0;calculate();}));
+  list.querySelectorAll('.custom-row-del').forEach(btn=>btn.addEventListener('click',()=>{customEntries.splice(parseInt(btn.dataset.i),1);renderCustomList();calculate();}));
+}
+$('addCustomBtn').addEventListener('click',()=>{
+  const lm=customEntries.length?customEntries[customEntries.length-1].month+1:1;
+  customEntries.push({month:Math.min(lm,360),amount:500}); renderCustomList(); calculate();
+});
+renderCustomList();
+
+function buildApportMap(totalMonths){
+  if(!apportOn) return {};
+  const map={}, amt=parseFloat($('apportAmt').value)||0;
+  if(activeFreq==='custom'){ customEntries.forEach(e=>{const m=Math.round(e.month);if(m>=1&&m<=totalMonths)map[m]=(map[m]||0)+(e.amount||0);}); }
+  else{ for(let m=activeFreq;m<=totalMonths;m+=activeFreq) map[m]=(map[m]||0)+amt; }
+  return map;
+}
+
+function calculate(){
+  const capital0=parseFloat($('capital').value)||0, pctDay=parseFloat($('pct').value)||0;
+  const totalMonths=parseInt($('months').value)||1, wPct=parseFloat($('withdrawal').value)||0;
+  const compound=document.querySelector('input[name=scenario]:checked').value==='compound';
+  const r=pctDay/100, apportMap=buildApportMap(totalMonths);
+  let cap=capital0, totalWithdrawn=0, totalApported=0; const rows=[];
+  for(let m=1;m<=totalMonths;m++){
+    const apport=apportMap[m]||0; cap+=apport; totalApported+=apport;
+    const capBefore=cap;
+    if(compound){ cap=cap*Math.pow(1+r,DAYS_PER_MONTH); } else { cap=cap+capital0*r*DAYS_PER_MONTH; }
+    const interest=cap-capBefore, withdrawn=interest*(wPct/100); cap-=withdrawn; totalWithdrawn+=withdrawn;
+    if(m%12===0||m===totalMonths) rows.push({m,cap,totalWithdrawn,totalApported,totalGain:cap+totalWithdrawn-capital0-totalApported,roi:((cap+totalWithdrawn-capital0-totalApported)/(capital0+totalApported))*100,mult:(cap+totalWithdrawn)/(capital0+totalApported)});
+  }
+  const finalCap=cap, totalGain=finalCap+totalWithdrawn-capital0-totalApported, invested=capital0+totalApported;
+  const roiTotal=(totalGain/invested)*100, years=totalMonths/12, roiAnnual=roiTotal/years, roiMon=roiTotal/totalMonths;
+  const mult=(finalCap+totalWithdrawn)/invested, avgW=totalWithdrawn/totalMonths;
+  const capEl=$('capitalVal'); capEl.textContent=fmt(finalCap); capEl.parentElement.classList.remove('pulse'); void capEl.parentElement.offsetWidth; capEl.parentElement.classList.add('pulse');
+  $('gainVal').textContent='+ '+fmt(totalGain)+' €'; $('gainPct').textContent='+'+fmtP(roiTotal);
+  $('statDays').textContent=(totalMonths*DAYS_PER_MONTH).toLocaleString('fr-FR');
+  $('statAnnual').textContent='+'+fmtP(roiAnnual); $('statX').textContent=mult.toLocaleString('fr-FR',{maximumFractionDigits:1})+'×'; $('statROI').textContent='+'+fmtP(roiTotal);
+  $('roiTotal').textContent='+'+fmtP(roiTotal); $('roiDuration').textContent=totalMonths>=12?(totalMonths/12).toLocaleString('fr-FR',{maximumFractionDigits:1})+' ans':totalMonths+' mois';
+  $('roiAnnual').textContent='+'+fmtP(roiAnnual); $('roiMonthly').textContent='+'+fmtP(roiMon);
+  const sumEl=$('apportSummary');
+  if(apportOn&&totalApported>0){sumEl.classList.add('visible');sumEl.innerHTML='Capital total investi : <span>'+fmtF(invested)+' €</span> · Apports cumulés : <span>'+fmtF(totalApported)+' €</span> · Apports : <span>'+Object.keys(apportMap).length+'</span>';}
+  else sumEl.classList.remove('visible');
+  const wBar=$('withdrawalBar');
+  if(wPct>0){wBar.style.display='flex';$('wbTotal').textContent=fmtF(totalWithdrawn)+' €';$('wbMonthly').textContent='~'+fmtF(avgW)+' € / mois';$('wbNote').textContent=wPct+'% des intérêts retirés / mois';}
+  else wBar.style.display='none';
+  const tbody=$('tableBody'); tbody.innerHTML='';
+  let prevCap=capital0,prevW=0,prevA=0;
+  for(const d of rows){
+    const pG=d.cap-prevCap-(d.totalApported-prevA),pW=d.totalWithdrawn-prevW,pA=d.totalApported-prevA;
+    const label=d.m%12===0?'Année '+(d.m/12):'Mois '+d.m;
+    const tr=document.createElement('tr');
+    tr.innerHTML=\`<td>\${label}</td><td class="hl">\${fmtF(d.cap)} €</td><td class="yw">\${pA>0?'+ '+fmtF(pA)+' €':'—'}</td><td class="gn">+ \${fmtF(pG)} €</td><td class="bl">\${pW>0?'− '+fmtF(pW)+' €':'—'}</td><td>+ \${fmtF(d.totalGain)} €</td><td class="gn">+\${fmtP(d.roi)}</td><td>\${d.mult.toLocaleString('fr-FR',{maximumFractionDigits:2})}×</td>\`;
+    tbody.appendChild(tr); prevCap=d.cap; prevW=d.totalWithdrawn; prevA=d.totalApported;
+  }
+  const labels=['Départ',...rows.map(d=>d.m%12===0?'An '+(d.m/12):'M'+d.m)];
+  const dataCap=[capital0,...rows.map(d=>d.cap)], dataFull=[capital0,...rows.map(d=>d.cap+d.totalWithdrawn)];
+  drawChart(labels,dataCap,dataFull,wPct>0);
+}
+
+function drawChart(labels,data,dataFull,showSecond){
+  const canvas=$('growthChart'), dpr=window.devicePixelRatio||1;
+  const rect=canvas.parentElement.getBoundingClientRect();
+  canvas.width=rect.width*dpr; canvas.height=200*dpr;
+  const ctx=canvas.getContext('2d'); ctx.scale(dpr,dpr);
+  const W=rect.width,H=200,pad={top:20,right:20,bottom:40,left:70};
+  const cW=W-pad.left-pad.right,cH=H-pad.top-pad.bottom; ctx.clearRect(0,0,W,H);
+  const all=showSecond?[...data,...dataFull]:data;
+  const minV=Math.min(...all),maxV=Math.max(...all),range=maxV-minV||1;
+  const toX=i=>pad.left+(i/(data.length-1))*cW, toY=v=>pad.top+cH-((v-minV)/range)*cH;
+  for(let i=0;i<=4;i++){const y=pad.top+(i/4)*cH;ctx.strokeStyle='rgba(212,175,55,.08)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(pad.left+cW,y);ctx.stroke();ctx.fillStyle='rgba(240,238,232,.3)';ctx.font='9px DM Mono,monospace';ctx.textAlign='right';ctx.fillText(fmt(maxV-(i/4)*range)+' €',pad.left-8,y+3);}
+  const dc=(pts,stroke,fillTop)=>{const g=ctx.createLinearGradient(0,pad.top,0,pad.top+cH);g.addColorStop(0,fillTop);g.addColorStop(1,'rgba(0,0,0,0)');ctx.beginPath();ctx.moveTo(toX(0),toY(pts[0]));for(let i=1;i<pts.length;i++){const cx=(toX(i-1)+toX(i))/2;ctx.bezierCurveTo(cx,toY(pts[i-1]),cx,toY(pts[i]),toX(i),toY(pts[i]));}ctx.lineTo(toX(pts.length-1),pad.top+cH);ctx.lineTo(toX(0),pad.top+cH);ctx.closePath();ctx.fillStyle=g;ctx.fill();ctx.beginPath();ctx.moveTo(toX(0),toY(pts[0]));for(let i=1;i<pts.length;i++){const cx=(toX(i-1)+toX(i))/2;ctx.bezierCurveTo(cx,toY(pts[i-1]),cx,toY(pts[i]),toX(i),toY(pts[i]));}ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke();};
+  if(showSecond)dc(dataFull,'rgba(126,200,227,.7)','rgba(126,200,227,.12)');
+  dc(data,'#D4AF37','rgba(212,175,55,.22)');
+  const step=Math.max(1,Math.floor(data.length/8));
+  for(let i=0;i<data.length;i++){ctx.beginPath();ctx.arc(toX(i),toY(data[i]),3,0,Math.PI*2);ctx.fillStyle='#D4AF37';ctx.fill();ctx.strokeStyle='#080A0D';ctx.lineWidth=1.5;ctx.stroke();if(i%step===0||i===data.length-1){ctx.fillStyle='rgba(240,238,232,.35)';ctx.font='9px DM Mono,monospace';ctx.textAlign='center';ctx.fillText(labels[i],toX(i),H-10);}}
+  if(showSecond){ctx.font='9px DM Mono,monospace';ctx.textAlign='left';ctx.fillStyle='rgba(126,200,227,.7)';ctx.fillText('◆ Capital + Retraits',pad.left+8,pad.top+12);ctx.fillStyle='#D4AF37';ctx.fillText('◆ Capital restant',pad.left+8,pad.top+24);}
+}
+
+// Pre-load MyFXBook stats
+window.addEventListener('load', ()=>{
+  $('capital').value = ${balance}; $('capitalRange').value = Math.min(${balance}, 500000);
+  $('pct').value = ${daily}; $('pctRange').value = Math.min(${daily}, 5);
+  calculate();
+});
+window.addEventListener('resize', calculate);
+<\/script>
+</body>
+</html>`;
+
+  // Download
+  const blob = new Blob([publicHTML], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'fabulor-public.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  setStatus('✔ Version publique téléchargée — déposez fabulor-public.html sur Netlify', 'ok');
+}
+
+function mfxLogout(){
+  if(mfxSession){ fetch(`${API}?action=logout&session=${mfxSession}`).catch(()=>{}); }
+  mfxSession = null; mfxAccounts = []; mfxActiveAccount = null;
+  $('mfxLogoutBtn').style.display = 'none';
+  $('mfxLoginBtn').style.display  = 'inline-block';
+  $('mfxDataCard').style.display  = 'none';
+  $('mfxAccountSelector').style.display = 'none';
+  $('mfxEmail').value = ''; $('mfxPassword').value = '';
+  setStatus('Déconnecté.', '');
+}
+
+function setStatus(msg, type){
+  const el = $('mfxStatus');
+  el.textContent = msg;
+  el.className   = 'mfx-status' + (type ? ' '+type : '');
+}
+
+// ── Sync slider <-> input ──────────────────────────────────
+function sync(inpId, rngId, cb){
+  const inp=$(inpId), rng=$(rngId);
+  inp.addEventListener('input',()=>{rng.value=inp.value; cb();});
+  rng.addEventListener('input',()=>{inp.value=rng.value; cb();});
+}
+sync('capital','capitalRange', calculate);
+sync('pct','pctRange', calculate);
+sync('months','monthsRange', calculate);
+sync('withdrawal','withdrawalRange', calculate);
+sync('apportAmt','apportAmtRange', calculate);
+
+$('withdrawal').addEventListener('input', e=>$('withdrawalBadge').textContent=e.target.value+'%');
+$('withdrawalRange').addEventListener('input', e=>$('withdrawalBadge').textContent=e.target.value+'%');
+document.querySelectorAll('input[name=scenario]').forEach(r=>r.addEventListener('change',calculate));
+
+// ── Apport toggle ──────────────────────────────────────────
+let apportOn = false;
+$('apportToggle').addEventListener('click', ()=>{
+  apportOn = !apportOn;
+  $('toggleTrack').classList.toggle('on', apportOn);
+  $('apportBody').classList.toggle('visible', apportOn);
+  calculate();
+});
+
+// ── Frequency tabs ─────────────────────────────────────────
+let activeFreq = 1; // months between apports (1=monthly, 'custom')
+document.querySelectorAll('.freq-tab').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.freq-tab').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const f = btn.dataset.freq;
+    activeFreq = f === 'custom' ? 'custom' : parseInt(f);
+    $('customSchedule').style.display = f === 'custom' ? 'block' : 'none';
+    calculate();
+  });
+});
+
+// ── Custom schedule ────────────────────────────────────────
+let customEntries = [{month:1, amount:500}];
+
+function renderCustomList(){
+  const list = $('customList');
+  list.innerHTML = '';
+  customEntries.forEach((e,i)=>{
+    const row = document.createElement('div');
+    row.className = 'custom-row';
+    row.innerHTML = `
+      <span class="custom-row-label">Mois</span>
+      <input type="number" value="${e.month}" min="1" max="360" data-i="${i}" data-field="month" placeholder="1">
+      <span class="custom-row-label" style="margin-left:8px">Montant</span>
+      <input type="number" value="${e.amount}" min="0" data-i="${i}" data-field="amount" placeholder="500">
+      <span class="input-unit" style="font-size:11px">€</span>
+      <button class="custom-row-del" data-i="${i}">×</button>
+    `;
+    list.appendChild(row);
+  });
+  list.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      const i=parseInt(inp.dataset.i), f=inp.dataset.field;
+      customEntries[i][f] = parseFloat(inp.value)||0;
+      calculate();
+    });
+  });
+  list.querySelectorAll('.custom-row-del').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      customEntries.splice(parseInt(btn.dataset.i),1);
+      renderCustomList(); calculate();
+    });
+  });
+}
+$('addCustomBtn').addEventListener('click', ()=>{
+  const lastM = customEntries.length ? customEntries[customEntries.length-1].month+1 : 1;
+  customEntries.push({month: Math.min(lastM,360), amount:500});
+  renderCustomList(); calculate();
+});
+renderCustomList();
+
+// ── Build apport map: month -> total apport ───────────────
+function buildApportMap(totalMonths){
+  if(!apportOn) return {};
+  const map = {};
+  const amt = parseFloat($('apportAmt').value)||0;
+  if(activeFreq === 'custom'){
+    customEntries.forEach(e=>{
+      const m = Math.round(e.month);
+      if(m>=1 && m<=totalMonths) map[m] = (map[m]||0) + (e.amount||0);
+    });
+  } else {
+    for(let m=activeFreq; m<=totalMonths; m+=activeFreq){
+      map[m] = (map[m]||0) + amt;
+    }
+  }
+  return map;
+}
+
+// ── Main calculation ───────────────────────────────────────
+function calculate(){
+  const capital0    = parseFloat($('capital').value)||0;
+  const pctDay      = parseFloat($('pct').value)||0;
+  const totalMonths = parseInt($('months').value)||1;
+  const wPct        = parseFloat($('withdrawal').value)||0;
+  const compound    = document.querySelector('input[name=scenario]:checked').value === 'compound';
+  const r           = pctDay / 100;
+  const apportMap   = buildApportMap(totalMonths);
+  const totalApportAmt = Object.values(apportMap).reduce((a,b)=>a+b,0);
+
+  let cap = capital0, totalWithdrawn = 0, totalApported = 0;
+  const rows = [];
+
+  for(let m=1; m<=totalMonths; m++){
+    // Apport en début de mois
+    const apport = apportMap[m]||0;
+    cap += apport;
+    totalApported += apport;
+
+    const capBefore = cap;
+    if(compound){
+      cap = cap * Math.pow(1+r, DAYS_PER_MONTH);
+    } else {
+      cap = cap + capital0 * r * DAYS_PER_MONTH;
+    }
+    const interest  = cap - capBefore;
+    const withdrawn = interest * (wPct/100);
+    cap -= withdrawn;
+    totalWithdrawn += withdrawn;
+
+    if(m % 12 === 0 || m === totalMonths){
+      rows.push({
+        m, cap, totalWithdrawn, totalApported,
+        totalGain: cap + totalWithdrawn - capital0 - totalApported,
+        roi: ((cap + totalWithdrawn - capital0 - totalApported) / (capital0 + totalApported)) * 100,
+        mult: (cap + totalWithdrawn) / (capital0 + totalApported)
+      });
+    }
+  }
+
+  const finalCap  = cap;
+  const totalGain = finalCap + totalWithdrawn - capital0 - totalApported;
+  const invested  = capital0 + totalApported;
+  const roiTotal  = (totalGain / invested) * 100;
+  const years     = totalMonths / 12;
+  const roiAnnual = roiTotal / years;
+  const roiMon    = roiTotal / totalMonths;
+  const mult      = (finalCap + totalWithdrawn) / invested;
+  const avgW      = totalWithdrawn / totalMonths;
+
+  // Header
+  const capEl = $('capitalVal');
+  capEl.textContent = fmt(finalCap);
+  capEl.parentElement.classList.remove('pulse');
+  void capEl.parentElement.offsetWidth;
+  capEl.parentElement.classList.add('pulse');
+  $('gainVal').textContent = '+ '+fmt(totalGain)+' €';
+  $('gainPct').textContent = '+'+fmtP(roiTotal);
+
+  $('statDays').textContent   = (totalMonths*DAYS_PER_MONTH).toLocaleString('fr-FR');
+  $('statAnnual').textContent = '+'+fmtP(roiAnnual);
+  $('statX').textContent      = mult.toLocaleString('fr-FR',{maximumFractionDigits:1})+'×';
+  $('statROI').textContent    = '+'+fmtP(roiTotal);
+
+  $('roiTotal').textContent    = '+'+fmtP(roiTotal);
+  $('roiDuration').textContent = totalMonths>=12 ? (totalMonths/12).toLocaleString('fr-FR',{maximumFractionDigits:1})+' ans' : totalMonths+' mois';
+  $('roiAnnual').textContent   = '+'+fmtP(roiAnnual);
+  $('roiMonthly').textContent  = '+'+fmtP(roiMon);
+
+  // Apport summary
+  const sumEl = $('apportSummary');
+  if(apportOn && totalApported > 0){
+    const nbApports = Object.keys(apportMap).length;
+    sumEl.classList.add('visible');
+    sumEl.innerHTML = `Capital total investi&nbsp;: <span>${fmtF(invested)} €</span> &nbsp;·&nbsp; Apports cumulés&nbsp;: <span>${fmtF(totalApported)} €</span> &nbsp;·&nbsp; Nombre d'apports&nbsp;: <span>${nbApports}</span>`;
+  } else {
+    sumEl.classList.remove('visible');
+  }
+
+  // Withdrawal bar
+  const wBar = $('withdrawalBar');
+  if(wPct > 0){
+    wBar.style.display='flex';
+    $('wbTotal').textContent   = fmtF(totalWithdrawn)+' €';
+    $('wbMonthly').textContent = '~'+fmtF(avgW)+' € / mois';
+    $('wbNote').textContent    = wPct+'% des intérêts retirés / mois';
+  } else {
+    wBar.style.display='none';
+  }
+
+  // Table
+  const tbody = $('tableBody');
+  tbody.innerHTML = '';
+  let prevCap=capital0, prevW=0, prevA=0;
+  for(const d of rows){
+    const periodGain = d.cap - prevCap - (d.totalApported - prevA);
+    const periodW    = d.totalWithdrawn - prevW;
+    const periodA    = d.totalApported - prevA;
+    const label      = d.m%12===0 ? 'Année '+(d.m/12) : 'Mois '+d.m;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${label}</td>
+      <td class="hl">${fmtF(d.cap)} €</td>
+      <td class="yw">${periodA>0 ? '+ '+fmtF(periodA)+' €' : '—'}</td>
+      <td class="gn">+ ${fmtF(periodGain)} €</td>
+      <td class="bl">${periodW>0 ? '− '+fmtF(periodW)+' €' : '—'}</td>
+      <td>+ ${fmtF(d.totalGain)} €</td>
+      <td class="gn">+${fmtP(d.roi)}</td>
+      <td>${d.mult.toLocaleString('fr-FR',{maximumFractionDigits:2})}×</td>
+    `;
+    tbody.appendChild(tr);
+    prevCap=d.cap; prevW=d.totalWithdrawn; prevA=d.totalApported;
+  }
+
+  // Chart
+  const labels   = ['Départ',...rows.map(d=>d.m%12===0?'An '+(d.m/12):'M'+d.m)];
+  const dataCap  = [capital0,...rows.map(d=>d.cap)];
+  const dataFull = [capital0,...rows.map(d=>d.cap+d.totalWithdrawn)];
+  drawChart(labels, dataCap, dataFull, wPct>0);
+}
+
+function drawChart(labels, data, dataFull, showSecond){
+  const canvas=$('growthChart');
+  const dpr=window.devicePixelRatio||1;
+  const rect=canvas.parentElement.getBoundingClientRect();
+  canvas.width=rect.width*dpr; canvas.height=200*dpr;
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  const W=rect.width,H=200;
+  const pad={top:20,right:20,bottom:40,left:70};
+  const cW=W-pad.left-pad.right,cH=H-pad.top-pad.bottom;
+  ctx.clearRect(0,0,W,H);
+
+  const all=showSecond?[...data,...dataFull]:data;
+  const minV=Math.min(...all),maxV=Math.max(...all),range=maxV-minV||1;
+  const toX=i=>pad.left+(i/(data.length-1))*cW;
+  const toY=v=>pad.top+cH-((v-minV)/range)*cH;
+
+  for(let i=0;i<=4;i++){
+    const y=pad.top+(i/4)*cH;
+    ctx.strokeStyle='rgba(212,175,55,.08)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(pad.left+cW,y); ctx.stroke();
+    ctx.fillStyle='rgba(240,238,232,.3)'; ctx.font='9px DM Mono,monospace'; ctx.textAlign='right';
+    ctx.fillText(fmt(maxV-(i/4)*range)+' €',pad.left-8,y+3);
+  }
+
+  const drawCurve=(pts,stroke,fillTop)=>{
+    const g=ctx.createLinearGradient(0,pad.top,0,pad.top+cH);
+    g.addColorStop(0,fillTop); g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.beginPath(); ctx.moveTo(toX(0),toY(pts[0]));
+    for(let i=1;i<pts.length;i++){const cx=(toX(i-1)+toX(i))/2; ctx.bezierCurveTo(cx,toY(pts[i-1]),cx,toY(pts[i]),toX(i),toY(pts[i]));}
+    ctx.lineTo(toX(pts.length-1),pad.top+cH); ctx.lineTo(toX(0),pad.top+cH);
+    ctx.closePath(); ctx.fillStyle=g; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(toX(0),toY(pts[0]));
+    for(let i=1;i<pts.length;i++){const cx=(toX(i-1)+toX(i))/2; ctx.bezierCurveTo(cx,toY(pts[i-1]),cx,toY(pts[i]),toX(i),toY(pts[i]));}
+    ctx.strokeStyle=stroke; ctx.lineWidth=2; ctx.stroke();
+  };
+
+  if(showSecond) drawCurve(dataFull,'rgba(126,200,227,.7)','rgba(126,200,227,.12)');
+  drawCurve(data,'#D4AF37','rgba(212,175,55,.22)');
+
+  const step=Math.max(1,Math.floor(data.length/8));
+  for(let i=0;i<data.length;i++){
+    ctx.beginPath(); ctx.arc(toX(i),toY(data[i]),3,0,Math.PI*2);
+    ctx.fillStyle='#D4AF37'; ctx.fill(); ctx.strokeStyle='#080A0D'; ctx.lineWidth=1.5; ctx.stroke();
+    if(i%step===0||i===data.length-1){
+      ctx.fillStyle='rgba(240,238,232,.35)'; ctx.font='9px DM Mono,monospace'; ctx.textAlign='center';
+      ctx.fillText(labels[i],toX(i),H-10);
+    }
+  }
+  if(showSecond){
+    ctx.font='9px DM Mono,monospace'; ctx.textAlign='left';
+    ctx.fillStyle='rgba(126,200,227,.7)'; ctx.fillText('◆ Capital + Retraits',pad.left+8,pad.top+12);
+    ctx.fillStyle='#D4AF37';             ctx.fillText('◆ Capital restant',pad.left+8,pad.top+24);
+  }
+}
+
+window.addEventListener('resize', calculate);
+calculate();
+</script>
+</body>
+</html>
