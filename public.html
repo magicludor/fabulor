@@ -685,7 +685,7 @@ async function loadPublicStats() {
     console.log('stats loaded:', JSON.stringify(s));
     if(parseFloat(s.daily)>0){$('pct').value=parseFloat(s.daily).toFixed(2);$('pctRange').value=Math.min(parseFloat(s.daily),5);}
     const b=document.getElementById('statsBanner');
-    b.style.cssText = 'display:flex !important;position:relative;z-index:10;background:rgba(212,175,55,0.08);border-bottom:1px solid rgba(212,175,55,0.2);padding:10px 24px;flex-wrap:wrap;gap:20px;justify-content:center;align-items:center;font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:0.2em;color:rgba(240,238,232,0.6);text-transform:uppercase';
+    b.style.cssText = 'display:flex !important;position:relative;z-index:10;background:#0E1117;border-bottom:1px solid rgba(212,175,55,0.4);padding:10px 24px;flex-wrap:wrap;gap:20px;justify-content:center;align-items:center;font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:0.2em;color:rgba(240,238,232,0.8);text-transform:uppercase';
     document.getElementById('bannerName').textContent=s.name||'';
     document.getElementById('bannerDaily').textContent=parseFloat(s.daily).toFixed(2)+' %';
     document.getElementById('bannerGain').textContent=parseFloat(s.gain).toFixed(2)+' %';
