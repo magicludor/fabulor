@@ -586,12 +586,9 @@ async function publishStats(){
     const acc = mfxActiveAccount;
     const stats = {
       name:     acc.name,
-      balance:  acc.balance,
       daily:    acc.daily,
-      monthly:  acc.monthly,
       gain:     acc.gain,
       drawdown: acc.drawdown,
-      currency: acc.currency || '€',
       lastUpdateDate: acc.lastUpdateDate,
       publishedAt: new Date().toISOString()
     };

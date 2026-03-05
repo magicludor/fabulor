@@ -193,7 +193,7 @@ footer p{font-size:10px;color:rgba(240,238,232,.2);letter-spacing:.2em;text-tran
   <span>Stats MyFXBook</span>
   <span>Compte&nbsp;: <strong id="bannerName" style="color:#D4AF37"></strong></span>
   <span>Gain/jour&nbsp;: <strong id="bannerDaily" style="color:#F0D060"></strong></span>
-  <span>Gain/mois&nbsp;: <strong id="bannerMonthly" style="color:#F0D060"></strong></span>
+  <span>Gain cumulé&nbsp;: <strong id="bannerGain" style="color:#F0D060"></strong></span>
   <span>Drawdown&nbsp;: <strong id="bannerDrawdown" style="color:#EB5757"></strong></span>
   <span id="bannerDate" style="color:rgba(240,238,232,0.3)"></span>
 </div>
@@ -682,12 +682,11 @@ async function loadPublicStats() {
     if(!r.ok){calculate();return;}
     const s = await r.json();
     if(parseFloat(s.daily)>0){$('pct').value=parseFloat(s.daily).toFixed(2);$('pctRange').value=Math.min(parseFloat(s.daily),5);}
-    if(parseFloat(s.balance)>0){$('capital').value=Math.round(parseFloat(s.balance));$('capitalRange').value=Math.min(Math.round(parseFloat(s.balance)),500000);}
     const b=document.getElementById('statsBanner');
     b.style.display='flex';
     document.getElementById('bannerName').textContent=s.name||'';
     document.getElementById('bannerDaily').textContent=parseFloat(s.daily).toFixed(2)+' %';
-    document.getElementById('bannerMonthly').textContent=parseFloat(s.monthly).toFixed(2)+' %';
+    document.getElementById('bannerGain').textContent=parseFloat(s.gain).toFixed(2)+' %';
     document.getElementById('bannerDrawdown').textContent=parseFloat(s.drawdown).toFixed(2)+' %';
     document.getElementById('bannerDate').textContent='Mis a jour : '+(s.lastUpdateDate||'');
     calculate();
