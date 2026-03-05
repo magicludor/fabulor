@@ -189,13 +189,29 @@ footer p{font-size:10px;color:rgba(240,238,232,.2);letter-spacing:.2em;text-tran
 </head>
 <body>
 
-<div id="statsBanner" style="display:none;background:rgba(212,175,55,0.08);border-bottom:1px solid rgba(212,175,55,0.2);padding:10px 24px;flex-wrap:wrap;gap:20px;justify-content:center;align-items:center;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.2em;color:rgba(240,238,232,0.6);text-transform:uppercase">
-  <span>Stats MyFXBook</span>
-  <span>Compte&nbsp;: <strong id="bannerName" style="color:#D4AF37"></strong></span>
-  <span>Gain/jour&nbsp;: <strong id="bannerDaily" style="color:#F0D060"></strong></span>
-  <span>Gain cumulé&nbsp;: <strong id="bannerGain" style="color:#F0D060"></strong></span>
-  <span>Drawdown&nbsp;: <strong id="bannerDrawdown" style="color:#EB5757"></strong></span>
-  <span id="bannerDate" style="color:rgba(240,238,232,0.3)"></span>
+<div id="statsBanner" style="display:none;background:#0E1117;border-bottom:2px solid rgba(212,175,55,0.3);padding:24px 32px;">
+  <div style="max-width:960px;margin:0 auto">
+    <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.35em;color:rgba(212,175,55,0.7);text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:12px">
+      <span style="width:20px;height:1px;background:rgba(212,175,55,0.4);display:inline-block"></span>
+      Stats réelles MyFXBook — <strong id="bannerName" style="color:#D4AF37"></strong>
+      <span style="width:20px;height:1px;background:rgba(212,175,55,0.4);display:inline-block"></span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
+      <div style="background:#141820;border:1px solid rgba(212,175,55,0.2);border-radius:2px;padding:16px 20px">
+        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.25em;color:rgba(212,175,55,0.7);text-transform:uppercase;margin-bottom:8px">Gain journalier</div>
+        <div id="bannerDaily" style="font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;color:#F0D060"></div>
+      </div>
+      <div style="background:#141820;border:1px solid rgba(212,175,55,0.2);border-radius:2px;padding:16px 20px">
+        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.25em;color:rgba(212,175,55,0.7);text-transform:uppercase;margin-bottom:8px">Gain cumulé</div>
+        <div id="bannerGain" style="font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;color:#F0D060"></div>
+      </div>
+      <div style="background:#141820;border:1px solid rgba(212,175,55,0.2);border-radius:2px;padding:16px 20px">
+        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.25em;color:rgba(240,87,87,0.7);text-transform:uppercase;margin-bottom:8px">Drawdown max</div>
+        <div id="bannerDrawdown" style="font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;color:#EB5757"></div>
+      </div>
+    </div>
+    <div id="bannerDate" style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(240,238,232,0.25);letter-spacing:.1em;margin-top:12px"></div>
+  </div>
 </div>
 
 <div class="wrapper">
@@ -685,7 +701,7 @@ async function loadPublicStats() {
     console.log('stats loaded:', JSON.stringify(s));
     if(parseFloat(s.daily)>0){$('pct').value=parseFloat(s.daily).toFixed(2);$('pctRange').value=Math.min(parseFloat(s.daily),5);}
     const b=document.getElementById('statsBanner');
-    b.style.cssText = 'display:flex !important;position:relative;z-index:10;background:#0E1117;border-bottom:1px solid rgba(212,175,55,0.4);padding:10px 24px;flex-wrap:wrap;gap:20px;justify-content:center;align-items:center;font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:0.2em;color:rgba(240,238,232,0.8);text-transform:uppercase';
+    b.style.display='block';
     document.getElementById('bannerName').textContent=s.name||'';
     document.getElementById('bannerDaily').textContent=parseFloat(s.daily).toFixed(2)+' %';
     document.getElementById('bannerGain').textContent=parseFloat(s.gain).toFixed(2)+' %';
