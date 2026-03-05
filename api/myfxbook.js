@@ -16,6 +16,12 @@ export default async function handler(req, res) {
 
     const response = await fetch(url);
     const data = await response.json();
+    
+    // Log all account fields for debugging
+    if (action === 'accounts' && data.accounts) {
+      console.log('Account fields:', JSON.stringify(data.accounts[0]));
+    }
+    
     res.setHeader('Access-Control-Allow-Origin', '*');
     return res.status(200).json(data);
 
