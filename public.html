@@ -679,8 +679,10 @@ function drawChart(labels, data, dataFull, showSecond){
 async function loadPublicStats() {
   try {
     const r = await fetch('https://raw.githubusercontent.com/magicludor/fabulor/main/stats.json?t='+Date.now());
+    console.log('fetch status:', r.status);
     if(!r.ok){calculate();return;}
     const s = await r.json();
+    console.log('stats loaded:', JSON.stringify(s));
     if(parseFloat(s.daily)>0){$('pct').value=parseFloat(s.daily).toFixed(2);$('pctRange').value=Math.min(parseFloat(s.daily),5);}
     const b=document.getElementById('statsBanner');
     b.style.display='flex';
@@ -690,7 +692,10 @@ async function loadPublicStats() {
     document.getElementById('bannerDrawdown').textContent=parseFloat(s.drawdown).toFixed(2)+' %';
     document.getElementById('bannerDate').textContent='Mis a jour : '+(s.lastUpdateDate||'');
     calculate();
-  }catch(e){calculate();}
+  }catch(e){
+    console.log('loadPublicStats error:', e.message);
+    calculate();
+  }
 }
 window.addEventListener('resize',calculate);
 window.addEventListener('load',loadPublicStats);
